@@ -71,7 +71,6 @@ $ vim k8s-prep.yml
   #gather_facts: no
   vars:
     k8s_version: "1.29"                                  # Kubernetes version to be installed
-    selinux_state: permissive                            # SELinux state to be set on k8s nodes                 
     timezone: "Africa/Nairobi"                           # Timezone to set on all nodes
     k8s_cni: calico                                      # calico, flannel
     container_runtime: cri-o                             # docker, cri-o, containerd 
