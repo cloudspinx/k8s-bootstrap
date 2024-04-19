@@ -1,0 +1,12 @@
+---
+- name: Update all packages to their latest version
+  ansible.builtin.apt:
+    name: "*"
+    state: latest
+    update_cache: yes
+
+- name: Install some packages needed to configure the nodes
+  ansible.builtin.apt:
+    name: "{{ item }}"
+  loop:
+    - "{{ basic_packages }}"

@@ -1,0 +1,87 @@
+---
+- name: Add Docker's official GPG key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    keyring: /etc/apt/keyrings/docker.gpg
+    state: present
+
+- name: Add Docker repository
+  ansible.builtin.apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
+    filename: docker
+    state: present
+
+- name: Install Docker and related packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    update_cache: true
+  loop:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+
+- name: Create other directories required
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /etc/docker
+    - /etc/systemd/system/docker.service.d
+
+- name: Set cgroup driver as systemd
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+
+- name: Start and enable docker service
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Get latest cri-dockerd release
+  ansible.builtin.shell:
+    cmd: curl --silent "https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest"|grep '"tag_name"'|sed -E 's/.*"([^"]+)".*/\1/'|sed 's/v//'
+  register: kube_cri_dockerd_version
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: Download cri-dockerd tarball
+  get_url:
+    url: https://github.com/Mirantis/cri-dockerd/releases/download/v{{ kube_cri_dockerd_version.stdout }}/cri-dockerd-{{ kube_cri_dockerd_version.stdout }}.amd64.tgz
+    dest: /tmp/cri-dockerd-{{ kube_cri_dockerd_version.stdout }}.amd64.tgz
+
+- name: Extract cri-dockerd tarball
+  unarchive:
+    src: /tmp/cri-dockerd-{{ kube_cri_dockerd_version.stdout }}.amd64.tgz
+    dest: /tmp
+    remote_src: yes
+
+- name: Copy cri-dockerd binary
+  copy:
+    src: /tmp/cri-dockerd/cri-dockerd
+    dest: /usr/bin/cri-dockerd
+    mode: '0755'
+    remote_src: true
+
+- name: Download cri-docker service and socket
+  get_url:
+    url: https://raw.githubusercontent.com/Mirantis/cri-dockerd/master/packaging/systemd/{{ item }}
+    dest: /etc/systemd/system/{{ item }}
+    mode: '0644'
+  loop: 
+    - cri-docker.service
+    - cri-docker.socket
+
+- name: Enable cri-dockerd service
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+    state: started
+  loop: 
+    - cri-docker.service
+    - cri-docker.socket

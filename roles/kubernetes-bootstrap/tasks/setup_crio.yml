@@ -1,0 +1,47 @@
+---
+- name: Import repository gpg key
+  ansible.builtin.apt_key:
+    state: present
+    url: https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/Release.key
+    keyring: /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+
+- name: Add CRI-O APT repository
+  ansible.builtin.apt_repository:
+    repo: deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/ /
+    state: present
+
+- name: Setup required sysctl params
+  ansible.posix.sysctl:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    sysctl_set: yes
+    state: present
+    reload: yes
+  with_items:
+    - {key: net.bridge.bridge-nf-call-ip6tables, value: 1}
+    - {key: net.bridge.bridge-nf-call-iptables,  value: 1}
+    - {key: net.ipv4.ip_forward,  value: 1}
+
+- name: Install cri-o
+  ansible.builtin.apt:
+    name: cri-o
+    state: latest
+    update_cache: yes
+
+- name: Configure cri-o subnet
+  ansible.builtin.replace:
+    path: '{{ item }}'
+    regexp: '10\.85\.0\.0\/16'
+    replace: '{{ pod_network_cidr }}'
+  ignore_errors: True
+  with_items:
+    - /etc/cni/net.d/100-crio-bridge.conf
+    - /etc/cni/net.d/100-crio-bridge.conflist
+    - /etc/cni/net.d/11-crio-ipv4-bridge.conflist
+
+- name: Start and enable crio service
+  ansible.builtin.service:
+    name: crio
+    state: restarted
+    enabled: yes
