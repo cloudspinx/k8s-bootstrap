@@ -28,7 +28,7 @@ This role contains tasks to:
 - Clone the Project:
 
 ```bash
-$ git clone https://github.com/jmutai/k8s-pre-bootstrap.git
+$ git clone https://github.com/cloudspinx/k8s-bootstrap.git
 ```
 
 - Configure `/etc/hosts` file in your bastion or workstation with all nodes and ip addresses. Example:
@@ -150,4 +150,4 @@ k8snode01                  : ok=23   changed=3    unreachable=0    failed=0    s
 k8snode02                  : ok=23   changed=3    unreachable=0    failed=0    skipped=11   rescued=0    ignored=0
 ```
 
-Next check article on bootsrapping k8s control plane: https://computingforgeeks.com/install-kubernetes-cluster-on-rocky-linux-with-kubeadm-crio/
+Next check article on bootsrapping k8s control plane: https://computingforgeeks.com/how-to-install-kubernetes-on-ubuntu-complete-steps/
