@@ -70,8 +70,8 @@ $ vim k8s-prep.yml
   become_method: sudo
   #gather_facts: no
   vars:
-    k8s_version: "1.29"                                  # Kubernetes version to be installed
-    timezone: "Africa/Nairobi"                           # Timezone to set on all nodes
+    k8s_version: "1.32"                                  # Kubernetes version to be installed
+    timezone: "UTC"                                      # Timezone to set on all nodes
     k8s_cni: calico                                      # calico, flannel
     container_runtime: cri-o                             # docker, cri-o, containerd 
     pod_network_cidr: "172.18.0.0/16"                    # pod subnet if using cri-o runtime
